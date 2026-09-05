@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "telegram-bot-builder"
+version = "1.0.0"
+description = "A Streamlit-based Telegram Bot Builder using TeleBot."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "streamlit",
+    "pyTelegramBotAPI",
+]
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
