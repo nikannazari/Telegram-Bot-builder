@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 from telegram_bot_builder.core.handler import HandlerConfig
 
@@ -8,7 +9,10 @@ class BotConfig:
     name: str
     username: str
     token: str = field(repr=False)
-    handlers: list[HandlerConfig] = field(default_factory=list)
+    telegram_id: int | None = None
+    handlers: list[HandlerConfig] = field(
+        default_factory=list
+    )
 
     def add_handler(
         self,
@@ -45,3 +49,12 @@ class BotConfig:
     @property
     def handler_count(self) -> int:
         return len(self.handlers)
+
+    def to_dict(self) -> dict[str, Any]:
+
+        return {
+            "telegram_id": self.telegram_id,
+            "name": self.name,
+            "username": self.username,
+            "handler_count": self.handler_count,
+        }

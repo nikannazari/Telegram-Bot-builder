@@ -3,6 +3,7 @@ from typing import Callable
 
 import telebot
 
+from telegram_bot_builder.core.bot import BotConfig
 from telegram_bot_builder.core.handler import (
     HandlerConfig,
     HandlerType,
@@ -24,11 +25,35 @@ class TelegramBotService:
         self._thread: threading.Thread | None = None
         self._running = False
 
-    def connect(self):
+    def get_bot_info(self) -> dict:
+        """
+        Verify the token and retrieve the real Telegram bot information.
+        """
 
         bot_info = self.bot.get_me()
 
-        return bot_info
+        return {
+            "id": bot_info.id,
+            "first_name": bot_info.first_name,
+            "username": bot_info.username,
+            "is_bot": bot_info.is_bot,
+        }
+
+    def update_bot_config(
+        self,
+        config: BotConfig,
+    ) -> BotConfig:
+
+        bot_info = self.get_bot_info()
+
+        config.telegram_id = bot_info["id"]
+
+        config.name = bot_info["first_name"]
+
+        if bot_info["username"]:
+            config.username = bot_info["username"]
+
+        return config
 
     def register_handlers(
         self,
@@ -168,10 +193,7 @@ class TelegramBotService:
             self._thread
             and self._thread.is_alive()
         ):
-
-            self._thread.join(
-                timeout=5
-            )
+            self._thread.join(timeout=5)
 
         self._thread = None
 
