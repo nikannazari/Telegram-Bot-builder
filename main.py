@@ -15,6 +15,7 @@ def main():
     choice = input("Select an option: ").strip()
 
     if choice == "1":
+
         subprocess.run(
             [
                 sys.executable,
@@ -26,16 +27,29 @@ def main():
         )
 
     elif choice == "2":
+
         subprocess.run(
-            [sys.executable, "-m", "telegram_bot_builder.cli"]
+            [
+                sys.executable,
+                "-m",
+                "telegram_bot_builder.cli",
+            ]
         )
 
     elif choice == "3":
+
         print("Goodbye!")
 
     else:
+
         print("Invalid option.")
 
 
 if __name__ == "__main__":
-    main()
+
+    try:
+        main()
+
+    except KeyboardInterrupt:
+
+        print("\nGoodbye!")

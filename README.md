@@ -1,86 +1,138 @@
 # 🤖 Telegram Bot Builder
 
-A modular Telegram Bot Builder built with **Python**, **Streamlit**, and **TeleBot (pyTelegramBotAPI)**.
+A modular Python application for building and running Telegram bots using **TeleBot (`pyTelegramBotAPI`)** with a **Streamlit** interface.
 
-The project allows you to configure a Telegram bot through a graphical interface and generate the corresponding Python source code automatically.
+The project allows you to connect an existing Telegram bot, configure message handlers, generate Python source code, save bot configurations, and run the bot directly from the application.
+
+---
 
 ## ✨ Features
 
-* Create bot configuration
-* Configure bot name and username
-* Secure bot token input
-* Add Telegram handlers from Streamlit
-* Text handlers
-* Command handlers
-* Contains-text handlers
-* Default handler
+* Connect existing Telegram bots using a Bot Token
+* Verify bot credentials through the Telegram API
+* Automatically retrieve:
+
+  * Bot ID
+  * Bot name
+  * Bot username
+* Create message handlers without manually writing code
+* Supported handler types:
+
+  * Text
+  * Command
+  * Contains
+  * Default
 * Generate a complete Python Telegram bot
-* Preview generated source code
-* Download generated `.py` files
-* Start and stop the bot from Streamlit
-* TeleBot-based Telegram integration
+* Save bot configurations locally
+* Save handler configurations locally
+* Load previously saved bots
+* Start and stop bots from Streamlit
+* Download generated Python source code
 * Modular project architecture
+* CLI support
 
-## 🏗️ Architecture
+---
 
-```text
-Streamlit UI
-     │
-     ▼
-BotConfig
-     │
-     ├── Bot Name
-     ├── Bot Username
-     ├── Bot Token
-     │
-     └── HandlerConfig[]
-              │
-              ▼
-        BotGenerator
-              │
-              ▼
-       generated/*.py
-              │
-              ▼
-          TeleBot
-              │
-              ▼
-          Telegram
-```
-
-## 📁 Project Structure
+## 🏗️ Project Structure
 
 ```text
 Telegram-Bot-Builder/
+│
 ├── main.py
+│
 ├── app/
 │   └── streamlit_app.py
+│
 ├── assets/
+│
 ├── bots/
 │   └── .gitkeep
+│
 ├── generated/
 │   └── .gitkeep
+│
 ├── src/
 │   └── telegram_bot_builder/
+│       │
 │       ├── __init__.py
+│       │
 │       ├── cli.py
+│       │
 │       ├── core/
 │       │   ├── __init__.py
 │       │   ├── bot.py
 │       │   └── handler.py
+│       │
 │       ├── services/
 │       │   ├── __init__.py
-│       │   ├── telegram.py
-│       │   └── generator.py
+│       │   ├── generator.py
+│       │   ├── storage.py
+│       │   └── telegram.py
+│       │
 │       └── utils/
 │           ├── __init__.py
 │           └── validators.py
+│
+├── .env.example
 ├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── pyproject.toml
 └── requirements.txt
 ```
+
+---
+
+## ⚙️ Architecture
+
+The project follows a modular architecture:
+
+```text
+                    ┌──────────────────┐
+                    │    Streamlit     │
+                    │       UI         │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │      Core        │
+                    │                  │
+                    │ BotConfig        │
+                    │ HandlerConfig    │
+                    └────────┬─────────┘
+                             │
+             ┌───────────────┼────────────────┐
+             ▼               ▼                ▼
+       ┌──────────┐   ┌─────────────┐   ┌──────────┐
+       │ Telegram │   │  Generator  │   │ Storage  │
+       │ Service  │   │             │   │          │
+       └────┬─────┘   └──────┬──────┘   └────┬─────┘
+            │                │               │
+            ▼                ▼               ▼
+         Telegram         .py file       JSON files
+```
+
+### Core
+
+Contains the application's main data models.
+
+### Services
+
+Contains application functionality such as:
+
+* Telegram API communication
+* Python code generation
+* Local configuration storage
+
+### Utils
+
+Contains validation and helper functionality.
+
+### App
+
+Contains the Streamlit user interface.
+
+---
 
 ## 🚀 Installation
 
@@ -109,19 +161,11 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## 🤖 Creating a Telegram Bot
+---
 
-Telegram bot accounts are created through **BotFather**.
+## ▶️ Running the Application
 
-After creating your bot, BotFather provides a bot token.
-
-Keep this token secret.
-
-Do not commit it to Git or place it directly inside generated source code.
-
-## ▶️ Run the Application
-
-Start the launcher:
+The recommended way is:
 
 ```bash
 python main.py
@@ -133,19 +177,39 @@ Then select:
 1. Start Streamlit
 ```
 
-Alternatively:
+Alternatively, run Streamlit directly:
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-## 🧩 Creating a Handler
+---
 
-For example:
+## 🤖 Creating a Telegram Bot
+
+Telegram bot accounts must be created through **BotFather**.
+
+1. Open Telegram.
+2. Open `@BotFather`.
+3. Create a new bot.
+4. Copy the generated Bot Token.
+5. Open Telegram Bot Builder.
+6. Paste the token into the application.
+7. Click **Connect Bot**.
+
+The application verifies the token through the Telegram API.
+
+---
+
+## 🧩 Handler Builder
+
+After connecting a bot, handlers can be created through the Streamlit interface.
+
+### Text Handler
+
+Example:
 
 ```text
-Handler Type: Text
-
 Trigger:
 python
 
@@ -153,7 +217,7 @@ Response:
 You mentioned Python!
 ```
 
-The builder generates:
+The generated code will look like:
 
 ```python
 @bot.message_handler(
@@ -163,67 +227,168 @@ def handle_python(message):
     bot.reply_to(message, "You mentioned Python!")
 ```
 
-## 📜 Generated Bot
+### Command Handler
 
-The generated bot is saved inside:
-
-```text
-generated/
-```
-
-For example:
+Example:
 
 ```text
-generated/
-└── python_bot.py
+Trigger:
+/start
+
+Response:
+Welcome!
 ```
 
-The generated source uses an environment variable for the bot token:
+Generated code:
 
 ```python
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+@bot.message_handler(commands=["start"])
+def handle_start(message):
+    bot.reply_to(message, "Welcome!")
 ```
 
-This prevents the token from being embedded directly into generated source code.
+### Contains Handler
+
+Example:
+
+```text
+Trigger:
+python
+
+Response:
+You are talking about Python.
+```
+
+This handler responds when the trigger appears inside the message.
+
+### Default Handler
+
+The default handler responds to messages that were not handled by other handlers.
+
+Only one default handler is allowed.
+
+---
+
+## 💾 Data Storage
+
+Bot configurations are stored locally:
+
+```text
+bots/
+└── <telegram_id>/
+    ├── config.json
+    └── handlers.json
+```
+
+Generated Python files are stored in:
+
+```text
+generated/
+└── <bot_name>.py
+```
+
+Example:
+
+```text
+bots/
+└── 123456789/
+    ├── config.json
+    └── handlers.json
+
+generated/
+└── my_bot.py
+```
+
+The bot configuration contains the Telegram Bot Token so that a saved bot can be loaded again after restarting the application.
+
+---
 
 ## 🔐 Security
 
-Bot tokens are credentials.
+Bot Tokens are sensitive credentials.
 
-Never:
+The `bots/` directory is excluded from Git through `.gitignore`.
 
-* Commit bot tokens to Git
-* Put tokens inside README files
-* Share tokens publicly
-* Hard-code tokens into source code
-* Store tokens inside generated files
+Do not:
 
-If a token is accidentally exposed, revoke it through BotFather and generate a new one.
+* Commit `bots/` to GitHub
+* Share `config.json`
+* Publish Bot Tokens
+* Put real tokens inside source code
+* Upload configuration files containing tokens publicly
 
-## 🛠️ Technologies
+If a Bot Token is accidentally exposed, revoke it through BotFather and generate a new token.
+
+---
+
+## 🖥️ CLI
+
+The project also provides a basic CLI interface.
+
+Example:
+
+```bash
+python -m telegram_bot_builder.cli \
+    --name "Python Bot" \
+    --trigger "python" \
+    --response "You mentioned Python!"
+```
+
+The generated bot will be placed inside:
+
+```text
+generated/
+```
+
+---
+
+## 🧱 Technologies
 
 * Python
 * Streamlit
 * TeleBot / pyTelegramBotAPI
-* Dataclasses
-* Threading
-* pathlib
+* JSON
+* Git
+
+---
 
 ## 📌 Current Scope
 
-The current version focuses on the core bot-building workflow:
+The current project focuses on:
 
 ```text
-Bot Configuration
-       ↓
-Handler Configuration
-       ↓
-Python Code Generation
-       ↓
-TeleBot Execution
+Telegram Bot
+      │
+      ├── Connect
+      │
+      ├── Configure
+      │
+      ├── Add Handlers
+      │
+      ├── Save Configuration
+      │
+      ├── Generate Python
+      │
+      └── Run Bot
 ```
 
-Database persistence, authentication, webhooks, deployment management, and multi-user support are intentionally outside the current scope.
+The project intentionally keeps the architecture simple and local.
+
+Features such as:
+
+* Database
+* Authentication
+* Multi-user management
+* Webhooks
+* Background worker management
+* Automatic bot recovery
+* Docker
+* Reverse proxy
+* Cloud deployment
+
+are outside the current scope.
+
+---
 
 ## 📄 License
 
