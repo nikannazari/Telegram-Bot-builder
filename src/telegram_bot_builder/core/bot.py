@@ -56,5 +56,6 @@ class BotConfig:
             "telegram_id": self.telegram_id,
             "name": self.name,
             "username": self.username,
+            "token": self.token,
             "handler_count": self.handler_count,
         }

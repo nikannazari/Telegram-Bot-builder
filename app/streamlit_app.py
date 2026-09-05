@@ -22,9 +22,7 @@ from telegram_bot_builder.services.telegram import (
     TelegramBotService,
 )
 from telegram_bot_builder.utils.validators import (
-    validate_bot_name,
     validate_bot_token,
-    validate_bot_username,
     validate_response,
     validate_trigger,
 )
@@ -37,9 +35,10 @@ st.set_page_config(
 )
 
 
-# =========================================================
-# Session State
-# =========================================================
+storage = BotStorage(
+    ROOT_DIR / "bots"
+)
+
 
 if "bot_config" not in st.session_state:
     st.session_state.bot_config = None
@@ -54,18 +53,93 @@ if "generated_file" not in st.session_state:
     st.session_state.generated_file = None
 
 
-# =========================================================
-# Storage
-# =========================================================
+def load_saved_bot(
+    bot_id: str,
+):
+    bot_id_int = int(bot_id)
 
-storage = BotStorage(
-    ROOT_DIR / "bots"
-)
+    config_data = storage.load_config(
+        bot_id_int
+    )
+
+    if not config_data:
+        return None
+
+    token = config_data.get("token")
+
+    if not token:
+        raise ValueError(
+            "Saved bot does not contain a token."
+        )
+
+    config = BotConfig(
+        name=config_data["name"],
+        username=config_data["username"],
+        token=token,
+        telegram_id=config_data["telegram_id"],
+    )
+
+    handlers_data = storage.load_handlers(
+        bot_id_int
+    )
+
+    handlers = []
+
+    for data in handlers_data:
+
+        handlers.append(
+            HandlerConfig(
+                name=data["name"],
+                handler_type=HandlerType(
+                    data["type"]
+                ),
+                trigger=data.get(
+                    "trigger",
+                    "",
+                ),
+                response=data["response"],
+            )
+        )
+
+    return config, handlers
 
 
-# =========================================================
-# Page
-# =========================================================
+def save_current_bot() -> None:
+
+    config = st.session_state.bot_config
+
+    if config is None:
+        return
+
+    storage.save_config(
+        config.telegram_id,
+        config.to_dict(),
+    )
+
+    handlers_data = [
+        {
+            "name": handler.name,
+            "type": handler.handler_type.value,
+            "trigger": handler.trigger,
+            "response": handler.response,
+        }
+        for handler in st.session_state.handlers
+    ]
+
+    storage.save_handlers(
+        config.telegram_id,
+        handlers_data,
+    )
+
+
+def create_bot_service(
+    config: BotConfig,
+) -> TelegramBotService:
+
+    return TelegramBotService(
+        config.token
+    )
+
 
 st.title("🤖 Telegram Bot Builder")
 
@@ -73,12 +147,79 @@ st.write(
     "Build and run Telegram bots using TeleBot."
 )
 
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+st.sidebar.title("Bot Manager")
+
+saved_bots = storage.list_bots()
+
+if saved_bots:
+
+    selected_bot = st.sidebar.selectbox(
+        "Saved Bots",
+        options=saved_bots,
+    )
+
+    if st.sidebar.button(
+        "Load Bot",
+        use_container_width=True,
+    ):
+
+        try:
+
+            loaded = load_saved_bot(
+                selected_bot
+            )
+
+            if loaded:
+
+                config, handlers = loaded
+
+                service = create_bot_service(
+                    config
+                )
+
+                st.session_state.bot_config = config
+
+                st.session_state.handlers = handlers
+
+                st.session_state.bot_service = service
+
+                st.session_state.generated_file = None
+
+                st.sidebar.success(
+                    f"Bot @{config.username} loaded."
+                )
+
+                st.rerun()
+
+            else:
+
+                st.sidebar.error(
+                    "Could not load bot configuration."
+                )
+
+        except Exception as error:
+
+            st.sidebar.error(
+                f"Could not load bot: {error}"
+            )
+
+else:
+
+    st.sidebar.info(
+        "No saved bots."
+    )
+
+
+# ============================================================
+# CONNECT BOT
+# ============================================================
+
 st.divider()
-
-
-# =========================================================
-# Import / Connect Bot
-# =========================================================
 
 st.header("1. Connect Telegram Bot")
 
@@ -93,6 +234,7 @@ bot_token = st.text_input(
     placeholder="123456789:ABC...",
 )
 
+
 if st.button(
     "Connect Bot",
     use_container_width=True,
@@ -100,7 +242,9 @@ if st.button(
 
     try:
 
-        validate_bot_token(bot_token)
+        validate_bot_token(
+            bot_token
+        )
 
         with st.spinner(
             "Connecting to Telegram..."
@@ -120,17 +264,20 @@ if st.button(
         )
 
         st.session_state.bot_config = config
+
         st.session_state.bot_service = service
+
         st.session_state.handlers = []
 
-        storage.save_config(
-            config.telegram_id,
-            config.to_dict(),
-        )
+        st.session_state.generated_file = None
+
+        save_current_bot()
 
         st.success(
             "Telegram bot connected successfully."
         )
+
+        st.rerun()
 
     except Exception as error:
 
@@ -139,9 +286,9 @@ if st.button(
         )
 
 
-# =========================================================
-# Bot Information
-# =========================================================
+# ============================================================
+# BOT INFORMATION
+# ============================================================
 
 if st.session_state.bot_config:
 
@@ -154,27 +301,30 @@ if st.session_state.bot_config:
     col1, col2, col3 = st.columns(3)
 
     with col1:
+
         st.metric(
             "Bot Name",
             config.name,
         )
 
     with col2:
+
         st.metric(
             "Username",
             f"@{config.username}",
         )
 
     with col3:
+
         st.metric(
             "Telegram ID",
             config.telegram_id,
         )
 
 
-# =========================================================
-# Handler Builder
-# =========================================================
+# ============================================================
+# HANDLER BUILDER
+# ============================================================
 
 if st.session_state.bot_config:
 
@@ -217,20 +367,33 @@ if st.session_state.bot_config:
         if handler_type != HandlerType.DEFAULT.value:
 
             try:
-                validate_trigger(trigger)
+
+                validate_trigger(
+                    trigger
+                )
 
             except ValueError as error:
-                errors.append(str(error))
+
+                errors.append(
+                    str(error)
+                )
 
         try:
-            validate_response(response)
+
+            validate_response(
+                response
+            )
 
         except ValueError as error:
-            errors.append(str(error))
+
+            errors.append(
+                str(error)
+            )
 
         if errors:
 
             for error in errors:
+
                 st.error(error)
 
         else:
@@ -283,14 +446,16 @@ if st.session_state.bot_config:
                     handler
                 )
 
+                save_current_bot()
+
                 st.success(
                     f"Handler '{handler.name}' added."
                 )
 
 
-# =========================================================
-# Handler List
-# =========================================================
+# ============================================================
+# CONFIGURED HANDLERS
+# ============================================================
 
 if st.session_state.handlers:
 
@@ -302,7 +467,9 @@ if st.session_state.handlers:
         st.session_state.handlers
     ):
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
             col1, col2 = st.columns(
                 [5, 1]
@@ -339,12 +506,14 @@ if st.session_state.handlers:
                         index
                     )
 
+                    save_current_bot()
+
                     st.rerun()
 
 
-# =========================================================
-# Generate Bot
-# =========================================================
+# ============================================================
+# GENERATE BOT
+# ============================================================
 
 if (
     st.session_state.bot_config
@@ -360,51 +529,41 @@ if (
         use_container_width=True,
     ):
 
-        generator = BotGenerator(
-            output_dir=ROOT_DIR / "generated"
-        )
+        try:
 
-        output_file = generator.generate_bot(
-            bot_name=(
-                st.session_state.bot_config.name
-            ),
-            handlers=(
-                st.session_state.handlers
-            ),
-        )
-
-        st.session_state.generated_file = (
-            output_file
-        )
-
-        handlers_data = []
-
-        for handler in (
-            st.session_state.handlers
-        ):
-
-            handlers_data.append(
-                {
-                    "name": handler.name,
-                    "type": handler.handler_type.value,
-                    "trigger": handler.trigger,
-                    "response": handler.response,
-                }
+            generator = BotGenerator(
+                output_dir=ROOT_DIR / "generated"
             )
 
-        storage.save_handlers(
-            st.session_state.bot_config.telegram_id,
-            handlers_data,
-        )
+            output_file = generator.generate_bot(
+                bot_name=(
+                    st.session_state.bot_config.name
+                ),
+                handlers=(
+                    st.session_state.handlers
+                ),
+            )
 
-        st.success(
-            f"Bot generated: `{output_file}`"
-        )
+            st.session_state.generated_file = (
+                output_file
+            )
+
+            save_current_bot()
+
+            st.success(
+                f"Bot generated: `{output_file}`"
+            )
+
+        except Exception as error:
+
+            st.error(
+                f"Could not generate bot: {error}"
+            )
 
 
-# =========================================================
-# Generated Code
-# =========================================================
+# ============================================================
+# GENERATED CODE
+# ============================================================
 
 if st.session_state.generated_file:
 
@@ -436,9 +595,9 @@ if st.session_state.generated_file:
         )
 
 
-# =========================================================
-# Bot Controls
-# =========================================================
+# ============================================================
+# BOT CONTROLS
+# ============================================================
 
 if (
     st.session_state.bot_config
@@ -464,11 +623,9 @@ if (
 
             if service is None:
 
-                service = TelegramBotService(
-                    st.session_state.bot_config.token
+                service = create_bot_service(
+                    st.session_state.bot_config
                 )
-
-                service.connect()
 
                 st.session_state.bot_service = (
                     service
