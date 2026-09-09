@@ -30,6 +30,9 @@ The project allows you to connect an existing Telegram bot, configure message ha
 * Download generated Python source code
 * Modular project architecture
 * CLI support
+* Linux launcher
+* Install launcher as a system command
+* Uninstall system command
 
 ---
 
@@ -39,6 +42,7 @@ The project allows you to connect an existing Telegram bot, configure message ha
 Telegram-Bot-Builder/
 │
 ├── main.py
+├── run.sh
 │
 ├── app/
 │   └── streamlit_app.py
@@ -165,7 +169,32 @@ pip install -r requirements.txt
 
 ## ▶️ Running the Application
 
-The recommended way is:
+### Using the Launcher
+
+The project includes a Linux launcher:
+
+```bash
+./run.sh
+```
+
+The launcher automatically:
+
+* Detects the project directory
+* Creates `.venv` if required
+* Activates the virtual environment
+* Installs dependencies when required
+* Starts Streamlit
+* Handles application shutdown
+
+You can also explicitly run:
+
+```bash
+./run.sh run
+```
+
+### Using Python
+
+Alternatively:
 
 ```bash
 python main.py
@@ -177,10 +206,69 @@ Then select:
 1. Start Streamlit
 ```
 
-Alternatively, run Streamlit directly:
+### Running Streamlit Directly
+
+You can also run Streamlit manually:
 
 ```bash
 streamlit run app/streamlit_app.py
+```
+
+---
+
+## 🐧 Linux Command Installation
+
+The launcher can install Telegram Bot Builder as a system command.
+
+Make the launcher executable:
+
+```bash
+chmod +x run.sh
+```
+
+Install the command:
+
+```bash
+./run.sh install
+```
+
+After installation, you can start Telegram Bot Builder from anywhere:
+
+```bash
+telegram-bot-builder
+```
+
+The command is installed under:
+
+```text
+/usr/local/bin/telegram-bot-builder
+```
+
+The installer associates the installed command with the current project directory, allowing the application to find its files regardless of where the repository was cloned.
+
+### Uninstall
+
+To remove the installed command:
+
+```bash
+./run.sh uninstall
+```
+
+This removes:
+
+```text
+/usr/local/bin/telegram-bot-builder
+```
+
+The project directory, bot configurations, generated files, and other project files are not removed.
+
+### Launcher Commands
+
+```text
+./run.sh
+./run.sh run
+./run.sh install
+./run.sh uninstall
 ```
 
 ---
@@ -349,6 +437,7 @@ generated/
 * TeleBot / pyTelegramBotAPI
 * JSON
 * Git
+* Bash
 
 ---
 
