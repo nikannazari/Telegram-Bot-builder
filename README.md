@@ -31,8 +31,7 @@ The project allows you to connect an existing Telegram bot, configure message ha
 * Modular project architecture
 * CLI support
 * Linux launcher
-* Install launcher as a system command
-* Uninstall system command
+* Global terminal command
 
 ---
 
@@ -59,7 +58,6 @@ Telegram-Bot-Builder/
 │   └── telegram_bot_builder/
 │       │
 │       ├── __init__.py
-│       │
 │       ├── cli.py
 │       │
 │       ├── core/
@@ -169,32 +167,9 @@ pip install -r requirements.txt
 
 ## ▶️ Running the Application
 
-### Using the Launcher
-
-The project includes a Linux launcher:
-
-```bash
-./run.sh
-```
-
-The launcher automatically:
-
-* Detects the project directory
-* Creates `.venv` if required
-* Activates the virtual environment
-* Installs dependencies when required
-* Starts Streamlit
-* Handles application shutdown
-
-You can also explicitly run:
-
-```bash
-./run.sh run
-```
-
 ### Using Python
 
-Alternatively:
+The application can be started with:
 
 ```bash
 python main.py
@@ -206,9 +181,9 @@ Then select:
 1. Start Streamlit
 ```
 
-### Running Streamlit Directly
+### Using Streamlit Directly
 
-You can also run Streamlit manually:
+You can also run:
 
 ```bash
 streamlit run app/streamlit_app.py
@@ -216,59 +191,65 @@ streamlit run app/streamlit_app.py
 
 ---
 
-## 🐧 Linux Command Installation
+## 🐧 Linux Launcher
 
-The launcher can install Telegram Bot Builder as a system command.
+The project includes a Linux launcher:
 
-Make the launcher executable:
-
-```bash
-chmod +x run.sh
+```text
+run.sh
 ```
 
-Install the command:
+The launcher automatically detects the project directory, creates the local `.venv` when necessary, installs dependencies, and starts the Streamlit application.
+
+### Start the application
+
+```bash
+./run.sh
+```
+
+or:
+
+```bash
+./run.sh run
+```
+
+### Install a global command
+
+You can install the project as a global Linux command:
 
 ```bash
 ./run.sh install
 ```
 
-After installation, you can start Telegram Bot Builder from anywhere:
+After installation, the application can be started from any directory with:
 
 ```bash
 telegram-bot-builder
 ```
 
-The command is installed under:
+The installer creates a symbolic link:
 
 ```text
 /usr/local/bin/telegram-bot-builder
+        │
+        ▼
+Telegram-Bot-Builder/run.sh
 ```
 
-The installer associates the installed command with the current project directory, allowing the application to find its files regardless of where the repository was cloned.
+The project path is therefore automatically associated with the installed command. No hard-coded user-specific path is required.
 
 ### Uninstall
 
-To remove the installed command:
+To remove the global command:
 
 ```bash
 ./run.sh uninstall
 ```
 
-This removes:
+### Show launcher help
 
-```text
-/usr/local/bin/telegram-bot-builder
-```
-
-The project directory, bot configurations, generated files, and other project files are not removed.
-
-### Launcher Commands
-
-```text
-./run.sh
-./run.sh run
-./run.sh install
-./run.sh uninstall
+```bash
+./run.sh help
 ```
 
 ---
@@ -436,8 +417,8 @@ generated/
 * Streamlit
 * TeleBot / pyTelegramBotAPI
 * JSON
-* Git
 * Bash
+* Git
 
 ---
 
