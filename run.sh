@@ -3,28 +3,23 @@
 set -e
 
 # ==========================================
-# Telegram Bot Builder Launcher
+# Telegram Bot Builder - Development Runner
 # ==========================================
 
-APP_NAME="telegram-bot-builder"
-INSTALL_PATH="/usr/local/bin/$APP_NAME"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Resolve the real path of this script.
-# This works even when run.sh is executed through a symlink.
-SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-PROJECT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+VENV_DIR="$PROJECT_DIR/.venv"
+PYTHON_BIN="$VENV_DIR/bin/python"
+PIP_BIN="$VENV_DIR/bin/pip"
 
-VENV="$PROJECT_DIR/.venv"
-PYTHON="$VENV/bin/python"
-PIP="$VENV/bin/pip"
+REQUIREMENTS_FILE="$PROJECT_DIR/requirements.txt"
+STREAMLIT_APP="$PROJECT_DIR/app/streamlit_app.py"
 
-MAIN_FILE="$PROJECT_DIR/main.py"
-REQUIREMENTS="$PROJECT_DIR/requirements.txt"
-LOG_FILE="/tmp/telegram-bot-builder-streamlit.log"
+LOG_FILE="/tmp/telegram-bot-builder-dev.log"
 
 
 # ==========================================
-# Colors / Output
+# Output Functions
 # ==========================================
 
 info() {
@@ -41,14 +36,20 @@ error() {
 
 
 # ==========================================
-# Check Project
+# Check Required Files
 # ==========================================
 
-check_project() {
+check_files() {
 
-    if [[ ! -f "$MAIN_FILE" ]]; then
-        error "main.py not found."
-        error "Project directory: $PROJECT_DIR"
+    if [[ ! -f "$REQUIREMENTS_FILE" ]]; then
+        error "requirements.txt not found:"
+        error "$REQUIREMENTS_FILE"
+        exit 1
+    fi
+
+    if [[ ! -f "$STREAMLIT_APP" ]]; then
+        error "Streamlit application not found:"
+        error "$STREAMLIT_APP"
         exit 1
     fi
 
@@ -61,43 +62,17 @@ check_project() {
 
 create_venv() {
 
-    if [[ ! -d "$VENV" ]]; then
+    if [[ ! -d "$VENV_DIR" ]]; then
 
         info "Creating virtual environment..."
 
-        python -m venv "$VENV"
+        python -m venv "$VENV_DIR"
 
         success "Virtual environment created."
 
-    fi
-
-}
-
-
-# ==========================================
-# Install Dependencies
-# ==========================================
-
-install_dependencies() {
-
-    if [[ ! -f "$REQUIREMENTS" ]]; then
-        error "requirements.txt not found."
-        exit 1
-    fi
-
-    info "Checking dependencies..."
-
-    if ! "$PYTHON" -c "import streamlit" &>/dev/null; then
-
-        info "Installing dependencies..."
-
-        "$PIP" install -r "$REQUIREMENTS"
-
-        success "Dependencies installed."
-
     else
 
-        success "Dependencies already installed."
+        info "Virtual environment already exists."
 
     fi
 
@@ -105,125 +80,69 @@ install_dependencies() {
 
 
 # ==========================================
-# Run Application
+# Activate Virtual Environment
+# ==========================================
+
+activate_venv() {
+
+    info "Activating virtual environment..."
+
+    # shellcheck disable=SC1091
+    source "$VENV_DIR/bin/activate"
+
+    success "Virtual environment activated."
+
+}
+
+
+# ==========================================
+# Install Requirements
+# ==========================================
+
+install_requirements() {
+
+    info "Upgrading pip..."
+
+    python -m pip install --upgrade pip
+
+    info "Installing project requirements..."
+
+    python -m pip install -r "$REQUIREMENTS_FILE"
+
+    success "Requirements installed."
+
+}
+
+
+# ==========================================
+# Run Streamlit Application
 # ==========================================
 
 run_app() {
 
-    check_project
-
     cd "$PROJECT_DIR"
 
-    create_venv
-
-    install_dependencies
+    info "Starting Streamlit application..."
 
     echo
     echo "=========================================="
-    echo "      Telegram Bot Builder"
+    echo "      Telegram Bot Builder - DEV"
     echo "=========================================="
     echo
-    echo "Project : $PROJECT_DIR"
-    echo "Python  : $PYTHON"
+    echo "Project directory:"
+    echo "$PROJECT_DIR"
     echo
-    echo "Starting Streamlit..."
+    echo "Virtual environment:"
+    echo "$VENV_DIR"
+    echo
+    echo "Application:"
+    echo "$STREAMLIT_APP"
+    echo
+    echo "Press Ctrl+C to stop the application."
     echo
 
-    "$PYTHON" -m streamlit run \
-        "$PROJECT_DIR/app/streamlit_app.py" \
+    python -m streamlit run "$STREAMLIT_APP" \
         2>&1 | tee "$LOG_FILE"
-
-}
-
-
-# ==========================================
-# Install Global Command
-# ==========================================
-
-install_command() {
-
-    check_project
-
-    info "Installing $APP_NAME..."
-
-    # If something already exists at the target,
-    # remove it before creating the new symlink.
-    if [[ -e "$INSTALL_PATH" || -L "$INSTALL_PATH" ]]; then
-
-        info "Removing existing installation..."
-
-        sudo rm -f "$INSTALL_PATH"
-
-    fi
-
-    # Create a symbolic link to the real project run.sh.
-    sudo ln -s "$PROJECT_DIR/run.sh" "$INSTALL_PATH"
-
-    sudo chmod +x "$PROJECT_DIR/run.sh"
-
-    echo
-    success "Installation completed."
-    echo
-    echo "Global command:"
-    echo
-    echo "    $APP_NAME"
-    echo
-    echo "Project:"
-    echo
-    echo "    $PROJECT_DIR"
-    echo
-    echo "Launcher:"
-    echo
-    echo "    $INSTALL_PATH -> $PROJECT_DIR/run.sh"
-    echo
-
-}
-
-
-# ==========================================
-# Uninstall Global Command
-# ==========================================
-
-uninstall_command() {
-
-    if [[ ! -e "$INSTALL_PATH" && ! -L "$INSTALL_PATH" ]]; then
-
-        info "$APP_NAME is not installed."
-
-        exit 0
-
-    fi
-
-    info "Removing $APP_NAME..."
-
-    sudo rm -f "$INSTALL_PATH"
-
-    success "$APP_NAME has been uninstalled."
-
-}
-
-
-# ==========================================
-# Show Help
-# ==========================================
-
-show_help() {
-
-    echo
-    echo "Telegram Bot Builder"
-    echo
-    echo "Usage:"
-    echo
-    echo "  ./run.sh              Start the application"
-    echo "  ./run.sh run          Start the application"
-    echo "  ./run.sh install      Install global command"
-    echo "  ./run.sh uninstall    Remove global command"
-    echo "  ./run.sh help         Show this help"
-    echo
-    echo "After installation:"
-    echo
-    echo "  telegram-bot-builder"
-    echo
 
 }
 
@@ -232,28 +151,15 @@ show_help() {
 # Main
 # ==========================================
 
-case "${1:-run}" in
+main() {
 
-    run)
-        run_app
-        ;;
+    check_files
+    create_venv
+    activate_venv
+    install_requirements
+    run_app
 
-    install)
-        install_command
-        ;;
+}
 
-    uninstall)
-        uninstall_command
-        ;;
 
-    help|--help|-h)
-        show_help
-        ;;
-
-    *)
-        error "Unknown command: $1"
-        show_help
-        exit 1
-        ;;
-
-esac
+main
