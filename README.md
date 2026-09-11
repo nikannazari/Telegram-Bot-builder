@@ -30,8 +30,10 @@ The project allows you to connect an existing Telegram bot, configure message ha
 * Download generated Python source code
 * Modular project architecture
 * CLI support
-* Linux launcher
-* Global terminal command
+* Local development runner
+* Linux installer and uninstaller
+* Windows installer and uninstaller
+* Global terminal command after installation
 
 ---
 
@@ -41,7 +43,14 @@ The project allows you to connect an existing Telegram bot, configure message ha
 Telegram-Bot-Builder/
 │
 ├── main.py
+│
 ├── run.sh
+├── install.sh
+├── uninstall.sh
+│
+├── run.bat
+├── install.bat
+├── uninstall.bat
 │
 ├── app/
 │   └── streamlit_app.py
@@ -138,26 +147,40 @@ Contains the Streamlit user interface.
 
 ## 🚀 Installation
 
-Clone the repository:
+### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd Telegram-Bot-Builder
 ```
 
-Create a virtual environment:
+### 2. Create a Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-Activate it on Linux:
+### 3. Activate the Virtual Environment
+
+#### Linux
 
 ```bash
 source .venv/bin/activate
 ```
 
-Install dependencies:
+#### Windows CMD
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+#### Windows PowerShell
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -183,74 +206,258 @@ Then select:
 
 ### Using Streamlit Directly
 
-You can also run:
-
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
 ---
 
-## 🐧 Linux Launcher
+## 🧪 Local Development Runner
 
-The project includes a Linux launcher:
+The project includes separate development runners for Linux and Windows.
+
+These runners:
+
+1. Detect the project directory.
+2. Create a local `.venv` if it does not exist.
+3. Install dependencies from `requirements.txt`.
+4. Run the Streamlit application.
+5. Do not install the application system-wide.
+
+---
+
+### Linux Development Runner
+
+File:
 
 ```text
 run.sh
 ```
 
-The launcher automatically detects the project directory, creates the local `.venv` when necessary, installs dependencies, and starts the Streamlit application.
+Make it executable:
 
-### Start the application
+```bash
+chmod +x run.sh
+```
+
+Run the application:
 
 ```bash
 ./run.sh
 ```
 
-or:
+The runner performs the equivalent of:
 
 ```bash
-./run.sh run
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m streamlit run app/streamlit_app.py
 ```
 
-### Install a global command
+---
 
-You can install the project as a global Linux command:
+### Windows Development Runner
 
-```bash
-./run.sh install
-```
-
-After installation, the application can be started from any directory with:
-
-```bash
-telegram-bot-builder
-```
-
-The installer creates a symbolic link:
+File:
 
 ```text
-/usr/local/bin/telegram-bot-builder
-        │
-        ▼
-Telegram-Bot-Builder/run.sh
+run.bat
 ```
 
-The project path is therefore automatically associated with the installed command. No hard-coded user-specific path is required.
+Run it from CMD:
 
-### Uninstall
+```cmd
+run.bat
+```
 
-To remove the global command:
+You can also double-click `run.bat` from File Explorer.
+
+The Windows runner performs the equivalent of:
+
+```cmd
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m streamlit run app\streamlit_app.py
+```
+
+---
+
+## 📦 Linux Installation
+
+The Linux installer installs the application as a system-wide command.
+
+### Install
+
+Make the installer executable:
 
 ```bash
-./run.sh uninstall
+chmod +x install.sh
 ```
 
-### Show launcher help
+Run:
 
 ```bash
-./run.sh help
+./install.sh
 ```
+
+The installer copies the application source code to:
+
+```text
+/opt/Telegram-Bot-Builder/
+```
+
+It creates the application virtual environment at:
+
+```text
+/opt/Telegram-Bot-Builder/.venv/
+```
+
+It also creates the global command:
+
+```text
+/usr/bin/Telegram-Bot-Builder
+```
+
+After installation, run the application from any directory:
+
+```bash
+Telegram-Bot-Builder
+```
+
+The installed command executes:
+
+```text
+/opt/Telegram-Bot-Builder/app/streamlit_app.py
+```
+
+using:
+
+```text
+/opt/Telegram-Bot-Builder/.venv/bin/python
+```
+
+### Linux Installation Layout
+
+```text
+/opt/Telegram-Bot-Builder/
+├── main.py
+├── app/
+│   └── streamlit_app.py
+├── src/
+├── assets/
+├── bots/
+├── generated/
+├── requirements.txt
+└── .venv/
+
+/usr/bin/Telegram-Bot-Builder
+```
+
+### Uninstall on Linux
+
+Run:
+
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+The uninstaller removes:
+
+```text
+/opt/Telegram-Bot-Builder/
+```
+
+and:
+
+```text
+/usr/bin/Telegram-Bot-Builder
+```
+
+> The installed `bots/` and `generated/` directories are also removed during uninstallation. Back up important bot configurations before uninstalling.
+
+---
+
+## 📦 Windows Installation
+
+The Windows installer installs the application inside the current user's local application directory.
+
+### Install
+
+Run:
+
+```cmd
+install.bat
+```
+
+You can also double-click `install.bat`.
+
+The installer copies the application source code to:
+
+```text
+%LOCALAPPDATA%\Telegram-Bot-Builder\
+```
+
+The virtual environment is created at:
+
+```text
+%LOCALAPPDATA%\Telegram-Bot-Builder\.venv\
+```
+
+The installer also creates a command file at:
+
+```text
+%LOCALAPPDATA%\Microsoft\WindowsApps\Telegram-Bot-Builder.bat
+```
+
+After installation, open a new CMD or PowerShell window and run:
+
+```cmd
+Telegram-Bot-Builder
+```
+
+### Windows Installation Layout
+
+```text
+%LOCALAPPDATA%\Telegram-Bot-Builder/
+├── main.py
+├── app/
+│   └── streamlit_app.py
+├── src/
+├── assets/
+├── bots/
+├── generated/
+├── requirements.txt
+└── .venv/
+
+%LOCALAPPDATA%\Microsoft\WindowsApps\
+└── Telegram-Bot-Builder.bat
+```
+
+### Uninstall on Windows
+
+Run:
+
+```cmd
+uninstall.bat
+```
+
+You can also double-click `uninstall.bat`.
+
+The uninstaller removes:
+
+```text
+%LOCALAPPDATA%\Telegram-Bot-Builder\
+```
+
+and:
+
+```text
+%LOCALAPPDATA%\Microsoft\WindowsApps\Telegram-Bot-Builder.bat
+```
+
+> The installed `bots/` and `generated/` directories are also removed during uninstallation. Back up important bot configurations before uninstalling.
 
 ---
 
@@ -340,7 +547,7 @@ Only one default handler is allowed.
 
 ## 💾 Data Storage
 
-Bot configurations are stored locally:
+During development, bot configurations are stored inside the project:
 
 ```text
 bots/
@@ -368,6 +575,22 @@ generated/
 └── my_bot.py
 ```
 
+When the application is installed, these directories are copied to the installation directory.
+
+### Linux
+
+```text
+/opt/Telegram-Bot-Builder/bots/
+/opt/Telegram-Bot-Builder/generated/
+```
+
+### Windows
+
+```text
+%LOCALAPPDATA%\Telegram-Bot-Builder\bots\
+%LOCALAPPDATA%\Telegram-Bot-Builder\generated\
+```
+
 The bot configuration contains the Telegram Bot Token so that a saved bot can be loaded again after restarting the application.
 
 ---
@@ -376,7 +599,7 @@ The bot configuration contains the Telegram Bot Token so that a saved bot can be
 
 Bot Tokens are sensitive credentials.
 
-The `bots/` directory is excluded from Git through `.gitignore`.
+The `bots/` directory should be excluded from Git through `.gitignore`.
 
 Do not:
 
@@ -418,6 +641,7 @@ generated/
 * TeleBot / pyTelegramBotAPI
 * JSON
 * Bash
+* Windows Batch
 * Git
 
 ---
